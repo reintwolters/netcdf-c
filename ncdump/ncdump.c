@@ -1107,7 +1107,9 @@ pr_att_hidden(
     size_t len;
 
     /* No special variable attributes for classic or 64-bit offset data */
-    /*if(kind == 1 || kind == 2) return; */
+#if 0
+    if(kind == 1 || kind == 2) return;
+#endif
     /* Print out Selected hidden attributes */
     /* NCPROPS */
     stat = nc_inq_att(ncid,NC_GLOBAL,NCPROPS,NULL,&len);
