@@ -127,7 +127,7 @@ main(int argc, char **argv)
 
     buildbaseline(); /* Build our comparison vector */
 
-    stat = NC_parsefilterspec(spec,&id,&nparams,&params);
+    stat = parsefilterspec(spec,&id,&nparams,&params);
     if(stat) {
 	fprintf(stderr,"NC_parsefilterspec failed\n");
 	exit(1);
