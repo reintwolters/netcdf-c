@@ -54,6 +54,7 @@ static int nerrs = 0;
 
 #ifdef WORDS_BIGENDIAN
 static void byteswap8(unsigned char* mem);
+static void wordswap8(unsigned char* mem);
 #endif
 
 static int parsefilterspec(const char* spec, unsigned int* idp, size_t* nparamsp, unsigned int** paramsp);
@@ -149,21 +150,21 @@ main(int argc, char **argv)
     ud.ui[0] = params[7];
     ud.ui[1] = params[8];
 #ifdef WORDS_BIGENDIAN
-    byteswap8((unsigned char*)&ud.d);
+    wordwap8((unsigned char*)&ud.d);
 #endif
     if(ud.d != (double)DBLVAL)
 	mismatch2(7,params,"ud.d");
     ul.ui[0] = params[9];
     ul.ui[1] = params[10];
 #ifdef WORD_BIGENDIAN
-    byteswap8((unsigned char*)&ul.ll);
+    wordwap8((unsigned char*)&ul.ll);
 #endif
     if(ul.ll != -9223372036854775807LL)
 	mismatch2(9,params,"ul.ll");
     ul.ui[0] = params[11];
     ul.ui[1] = params[12];
 #ifdef WORDS_BIGENDIAN
-    byteswap8((unsigned char*)&ul.ull);
+    wordswap8((unsigned char*)&ul.ull);
 #endif
     if(ul.ull != 18446744073709551615ULL)
 	mismatch2(11,params,"ul.ull");
@@ -195,6 +196,16 @@ byteswap8(unsigned char* mem)
     c = mem[3];
     mem[3] = mem[4];
     mem[4] = c;
+}
+
+/* Word swap an 8-byte integer in place */
+static void
+worswap8(unsigned char* mem)
+{
+    unsigned char i[4];
+    memcpy(i,mem,4); /* save the first 4 bytes */
+    memcpy(mem,mem+4,4); /* copy second 4 bytes into first four */
+    memcpy(mem+4,i,4); /* copy saved 4 bytes into second four */
 }
 #endif
 
