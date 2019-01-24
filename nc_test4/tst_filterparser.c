@@ -19,18 +19,13 @@
 */
 #define DBLVAL 12345678.12345678
 
+#define FLTVAL 789.0
+
+#define LONGLONGVAL -9223372036854775807LL
+#define ULONGLONGVAL 18446744073709551615ULL
+
 #define MAXPARAMS 32
 #define NPARAMS 16 /* # of unsigned ints in params */
-
-static unsigned int baseline[NPARAMS];
-	
-/* Expected contents of baseline:
-id = 32768
-params = 4294967279, 23, 4294967271, 27, 77, 93, 1145389056, 3287505826, 1097305129, 1, 2147483647, 4294967295U, 4294967295U
-*/
-
-static const char* spec = 
-"32768, -17b, 23ub, -25S, 27US, 77, 93U, 789f, 12345678.12345678d, -9223372036854775807L, 18446744073709551615UL, 2147483647, -2147483648, 4294967295U";
 
 /* Test support for the conversions */
 /* Not sure if this kind of casting via union is legal C99 */
@@ -49,6 +44,37 @@ static union {
     unsigned long long ull;
     long long ll;
 } ul;
+
+/* Expected contents of baseline:
+id = 32768
+index	spec item	Value
+----------------------------------------
+0	-17b			4294967279
+1	23ub			23
+2	-25S			42949677271
+3	27US			27
+4	77			77
+5	93U			93
+6	2147483647		?
+7	-2147483648		?
+8	4294967295U		?
+9	789f			1145389056
+<8-bytes start here >
+10	-9223372036854775807L	1, 2147483647
+12	18446744073709551615UL	4294967295U, 4294967295U
+14	12345678.12345678d	3287505826, 1097305129
+
+expected (LE) = {239, 23, 65511, 27, 77, 93, 2147483647, 2147483648, 4294967295, 
+		 1145389056, 1, 2147483648, 4294967295, 4294967295, 3287505826, 1097305129}
+*/
+
+static unsigned int baseline[MAXPARAMS]; /* Expected */
+
+static const char* spec = 
+"32768, -17b, 23ub, -25S, 27US, 77, 93U, 2147483647, -2147483648, 4294967295U, 789f, -9223372036854775807L, 18446744073709551615UL, 12345678.12345678d";
+
+/* Define the type strings for each spec entry */
+static const char* spectype[] = {"i", "b", "ub", "s", "us", "i", "ui", "i", "i", "ui", "f", "ll", "ull", "d"};
 
 static int nerrs = 0;
 
@@ -92,31 +118,31 @@ buildbaseline(void)
     double float8;
 
     val4 = ((unsigned int)-17) & 0xff;
-    insert(0,&val4,sizeof(val4)); /* 0 signed int*/
+    insert(0,&val4,sizeof(val4)); /* signed int*/
     val4 = (unsigned int)23;
-    insert(1,&val4,sizeof(val4)); /* 1 unsigned int*/
+    insert(1,&val4,sizeof(val4)); /* unsigned int*/
     val4 = ((unsigned int)-25) & 0xffff;
-    insert(2,&val4,sizeof(val4)); /* 3 signed int*/
+    insert(2,&val4,sizeof(val4)); /* signed int*/
     val4 = (unsigned int)27;
-    insert(3,&val4,sizeof(val4)); /* 4 unsigned int*/
+    insert(3,&val4,sizeof(val4)); /* unsigned int*/
     val4 = (unsigned int)77;
-    insert(4,&val4,sizeof(val4)); /* 4 signed int*/
+    insert(4,&val4,sizeof(val4)); /* signed int*/
     val4 = (unsigned int)93;
-    insert(5,&val4,sizeof(val4)); /* 5 unsigned int*/
+    insert(5,&val4,sizeof(val4)); /* unsigned int*/
+    val4 = 2147483647; /*0x7fffffff*/
+    insert(6,&val4,sizeof(val4)); /* signed int */
+    val4 = (-2147483647)-1; /*0x80000000*/
+    insert(7,&val4,sizeof(val4)); /* signed int */
+    val4 = 4294967295U; /*0xffffffff*/
+    insert(8,&val4,sizeof(val4)); /* unsigned int */
     float4 = 789.0f;
-    insert(6,&float4,sizeof(float4)); /* 6 float */
-    float8 = DBLVAL;
-    insert(7,&float8,sizeof(float8)); /* 7 double */
+    insert(9,&float4,sizeof(float4)); /*float */
     val8 = -9223372036854775807L;
-    insert(9,&val8,sizeof(val8)); /* 9 signed long long */
+    insert(10,&val8,sizeof(val8)); /* signed long long */
     val8 = 18446744073709551615UL;
-    insert(11,&val8,sizeof(val8)); /* 11 unsigned long long */
-    val4 = 2147483647;
-    insert(13,&val4,sizeof(val4)); /* 13 signed int */
-    val4 = (-2147483647)-1;
-    insert(14,&val4,sizeof(val4)); /* 14 signed int */
-    val4 = 4294967295U;
-    insert(15,&val4,sizeof(val4)); /* 15 unsigned int */
+    insert(12,&val8,sizeof(val8)); /* unsigned long long */
+    float8 = DBLVAL;
+    insert(114,&float8,sizeof(float8)); /* double */
 }
 
 /**************************************************/
@@ -139,38 +165,44 @@ main(int argc, char **argv)
     }
     if(id != PARAMS_ID)
         fprintf(stderr,"mismatch: id: expected=%u actual=%u\n",PARAMS_ID,id);
-    for(i=0;i<nparams;i++) {
+
+    /* Do all the 32 bit tests */
+    for(i=0;i<=8;i++) {
 	if(baseline[i] != params[i])
-	    mismatch(i,params,"N.A.");
+	    mismatch(i,params,spectype[i]);
     }
-    /* Now some specialized tests */
-    uf.ui = params[6];
-    if(uf.f != (float)789.0)
-	mismatch(6,params,"uf.f");
-    ud.ui[0] = params[7];
-    ud.ui[1] = params[8];
+
+    /* float */
+    uf.ui = params[9];
+    if(uf.f != (float)FLTVAL)
+	mismatch2(7,params,"uf.f");
+
+    /* signed long long */
+    ul.ui[0] = params[10];
+    ul.ui[1] = params[11];
+#ifdef WORD_BIGENDIAN
+    wordswap8((unsigned char*)&ul.ll);
+#endif
+    if(ul.ll != LONGLONGVAL)
+	mismatch2(9,params,"ul.ll");
+
+    /* unsigned long long */
+    ul.ui[0] = params[12];
+    ul.ui[1] = params[13];
+#ifdef WORDS_BIGENDIAN
+    wordswap8((unsigned char*)&ul.ull);
+#endif
+    if(ul.ull != ULONGLONGVAL)
+	mismatch2(11,params,"ul.ull");
+
+    /* double */
+    ud.ui[0] = params[14];
+    ud.ui[1] = params[15];
 #ifdef WORDS_BIGENDIAN
     wordswap8((unsigned char*)&ud.d);
 #endif
     if(ud.d != (double)DBLVAL)
 	mismatch2(7,params,"ud.d");
-    ul.ui[0] = params[9];
-    ul.ui[1] = params[10];
-#ifdef WORD_BIGENDIAN
-    wordswap8((unsigned char*)&ul.ll);
-#endif
-    if(ul.ll != -9223372036854775807LL)
-	mismatch2(9,params,"ul.ll");
-    ul.ui[0] = params[11];
-    ul.ui[1] = params[12];
-#ifdef WORDS_BIGENDIAN
-    wordswap8((unsigned char*)&ul.ull);
-#endif
-    if(ul.ull != 18446744073709551615ULL)
-	mismatch2(11,params,"ul.ull");
-
-    if (params)
-       free(params);
 
     if (!nerrs)
        printf("SUCCESS!!\n");
