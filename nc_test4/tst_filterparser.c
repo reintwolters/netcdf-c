@@ -52,6 +52,10 @@ static union {
 
 static int nerrs = 0;
 
+#ifdef WORDS_BIGENDIAN
+static void byteswap8(unsigned char* mem);
+#endif
+
 static int parsefilterspec(const char* spec, unsigned int* idp, size_t* nparamsp, unsigned int** paramsp);
 
 static void
@@ -144,7 +148,7 @@ main(int argc, char **argv)
 	mismatch(6,params,"uf.f");
     ud.ui[0] = params[7];
     ud.ui[1] = params[8];
-#ifdef WORD_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
     byteswap8((unsigned char*)&ud.d);
 #endif
     if(ud.d != (double)DBLVAL)
@@ -158,7 +162,7 @@ main(int argc, char **argv)
 	mismatch2(9,params,"ul.ll");
     ul.ui[0] = params[11];
     ul.ui[1] = params[12];
-#ifdef WORD_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
     byteswap8((unsigned char*)&ul.ull);
 #endif
     if(ul.ull != 18446744073709551615ULL)
@@ -173,7 +177,7 @@ main(int argc, char **argv)
     return (nerrs > 0 ? 1 : 0);
 }
 
-#ifdef WORD_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
 /* Byte swap an 8-byte integer in place */
 static void
 byteswap8(unsigned char* mem)
