@@ -150,14 +150,14 @@ main(int argc, char **argv)
     ud.ui[0] = params[7];
     ud.ui[1] = params[8];
 #ifdef WORDS_BIGENDIAN
-    wordwap8((unsigned char*)&ud.d);
+    wordswap8((unsigned char*)&ud.d);
 #endif
     if(ud.d != (double)DBLVAL)
 	mismatch2(7,params,"ud.d");
     ul.ui[0] = params[9];
     ul.ui[1] = params[10];
 #ifdef WORD_BIGENDIAN
-    wordwap8((unsigned char*)&ul.ll);
+    wordswap8((unsigned char*)&ul.ll);
 #endif
     if(ul.ll != -9223372036854775807LL)
 	mismatch2(9,params,"ul.ll");
@@ -200,7 +200,7 @@ byteswap8(unsigned char* mem)
 
 /* Word swap an 8-byte integer in place */
 static void
-worswap8(unsigned char* mem)
+wordswap8(unsigned char* mem)
 {
     unsigned char i[4];
     memcpy(i,mem,4); /* save the first 4 bytes */
