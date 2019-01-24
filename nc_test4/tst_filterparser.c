@@ -64,8 +64,52 @@ index	spec item	Value
 12	18446744073709551615UL	4294967295U, 4294967295U
 14	12345678.12345678d	3287505826, 1097305129
 
-expected (LE) = {239, 23, 65511, 27, 77, 93, 2147483647, 2147483648, 4294967295, 
-		 1145389056, 1, 2147483648, 4294967295, 4294967295, 3287505826, 1097305129}
+expected (LE):
+{239, 23, 65511, 27, 77, 93, 2147483647, 2147483648, 4294967295, 1145389056,
+ 1, 2147483648, 4294967295, 4294967295, 3287505826, 1097305129}
+
+params (LE):
+0x000000ef
+0x00000017
+0x0000ffe7
+0x0000001b
+0x0000004d
+0x0000005d
+0x7fffffff
+0x80000000
+0xffffffff
+0x44454000
+
+0x000000001 .ll
+0x80000000
+0xffffffff .ull
+0xffffffff
+0xc3f35ba2 .d
+0x41678c29
+
+expected (BE):
+{239, 23, 65511, 27, 77, 93, 2147483647, 2147483648, 4294967295, 1145389056,
+ 16777216, 128, 4294967295, 4294967295, 2723935171, 697067329}
+
+params (BE):
+0x000000ef,
+0x00000017,
+0x0000ffe7,
+0x0000001b,
+0x0000004d,
+0x0000005d,
+0x7fffffff,
+0x80000000,
+0xffffffff,
+0x44454000, .f
+
+0x01000000, .ll
+0x00000080,
+0xffffffff, .ull
+0xffffffff,
+0xa25bf3c3, .d
+0x298c6741,
+
 */
 
 static unsigned int baseline[MAXPARAMS]; /* Expected */
@@ -181,7 +225,7 @@ main(int argc, char **argv)
     ul.ui[0] = params[10];
     ul.ui[1] = params[11];
 #ifdef WORD_BIGENDIAN
-    wordswap8((unsigned char*)&ul.ll);
+    byteswap8((unsigned char*)&ul.ll);
 #endif
     if(ul.ll != LONGLONGVAL)
 	mismatch2(10,params,"ul.ll");
@@ -190,7 +234,7 @@ main(int argc, char **argv)
     ul.ui[0] = params[12];
     ul.ui[1] = params[13];
 #ifdef WORDS_BIGENDIAN
-    wordswap8((unsigned char*)&ul.ull);
+    byteswap8((unsigned char*)&ul.ull);
 #endif
     if(ul.ull != ULONGLONGVAL)
 	mismatch2(12,params,"ul.ull");
@@ -199,7 +243,7 @@ main(int argc, char **argv)
     ud.ui[0] = params[14];
     ud.ui[1] = params[15];
 #ifdef WORDS_BIGENDIAN
-    wordswap8((unsigned char*)&ud.d);
+    byteswap8((unsigned char*)&ud.d);
 #endif
     if(ud.d != (double)DBLVAL)
 	mismatch2(14,params,"ud.d");
