@@ -175,7 +175,7 @@ main(int argc, char **argv)
     /* float */
     uf.ui = params[9];
     if(uf.f != (float)FLTVAL)
-	mismatch2(7,params,"uf.f");
+	mismatch(9,params,"uf.f");
 
     /* signed long long */
     ul.ui[0] = params[10];
@@ -184,7 +184,7 @@ main(int argc, char **argv)
     wordswap8((unsigned char*)&ul.ll);
 #endif
     if(ul.ll != LONGLONGVAL)
-	mismatch2(9,params,"ul.ll");
+	mismatch2(10,params,"ul.ll");
 
     /* unsigned long long */
     ul.ui[0] = params[12];
@@ -193,7 +193,7 @@ main(int argc, char **argv)
     wordswap8((unsigned char*)&ul.ull);
 #endif
     if(ul.ull != ULONGLONGVAL)
-	mismatch2(11,params,"ul.ull");
+	mismatch2(12,params,"ul.ull");
 
     /* double */
     ud.ui[0] = params[14];
@@ -202,7 +202,7 @@ main(int argc, char **argv)
     wordswap8((unsigned char*)&ud.d);
 #endif
     if(ud.d != (double)DBLVAL)
-	mismatch2(7,params,"ud.d");
+	mismatch2(14,params,"ud.d");
 
     if (!nerrs)
        printf("SUCCESS!!\n");
