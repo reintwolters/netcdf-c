@@ -79,7 +79,6 @@ params (LE):
 0x80000000
 0xffffffff
 0x44454000
-
 0x000000001 .ll
 0x80000000
 0xffffffff .ull
@@ -92,23 +91,22 @@ expected (BE):
  16777216, 128, 4294967295, 4294967295, 2723935171, 697067329}
 
 params (BE):
-0x000000ef,
-0x00000017,
-0x0000ffe7,
-0x0000001b,
-0x0000004d,
-0x0000005d,
-0x7fffffff,
-0x80000000,
-0xffffffff,
-0x44454000, .f
-
-0x01000000, .ll
-0x00000080,
-0xffffffff, .ull
-0xffffffff,
-0xa25bf3c3, .d
-0x298c6741,
+0x000000ef
+0x00000017
+0x0000ffe7
+0x0000001b
+0x0000004d
+0x0000005d
+0x7fffffff
+0x80000000
+0xffffffff
+0x44454000
+0x01000000 .ll
+0x00000080
+0xffffffff .ull
+0xffffffff
+0xa25bf3c3 .d
+0x298c6741
 
 */
 
@@ -122,11 +120,8 @@ static const char* spectype[] = {"i", "b", "ub", "s", "us", "i", "ui", "i", "i",
 
 static int nerrs = 0;
 
-#ifdef WORDS_BIGENDIAN
-static void byteswap8(unsigned char* mem);
-static void wordswap8(unsigned char* mem);
-#endif
-
+/*Forward*/
+static void NC_filterfix8(unsigned char* mem, int decode);
 static int parsefilterspec(const char* spec, unsigned int* idp, size_t* nparamsp, unsigned int** paramsp);
 
 static void
@@ -224,27 +219,21 @@ main(int argc, char **argv)
     /* signed long long */
     ul.ui[0] = params[10];
     ul.ui[1] = params[11];
-#ifdef WORD_BIGENDIAN
-    byteswap8((unsigned char*)&ul.ll);
-#endif
+    NC_filterfix8((unsigned char*)&ul.ll,1);
     if(ul.ll != LONGLONGVAL)
 	mismatch2(10,params,"ul.ll");
 
     /* unsigned long long */
     ul.ui[0] = params[12];
     ul.ui[1] = params[13];
-#ifdef WORDS_BIGENDIAN
-    byteswap8((unsigned char*)&ul.ull);
-#endif
+    NC_filterfix8((unsigned char*)&ul.ull,1);
     if(ul.ull != ULONGLONGVAL)
 	mismatch2(12,params,"ul.ull");
 
     /* double */
     ud.ui[0] = params[14];
     ud.ui[1] = params[15];
-#ifdef WORDS_BIGENDIAN
-    byteswap8((unsigned char*)&ud.d);
-#endif
+    NC_filterfix8((unsigned char*)&ud.d,1);
     if(ud.d != (double)DBLVAL)
 	mismatch2(14,params,"ud.d");
 
@@ -274,7 +263,21 @@ byteswap8(unsigned char* mem)
     mem[4] = c;
 }
 
-/* Word swap an 8-byte integer in place */
+/* Byte swap an 8-byte integer in place */
+static void
+byteswap4(unsigned char* mem)
+{
+    unsigned char c;
+    c = mem[0];
+    mem[0] = mem[3];
+    mem[3] = c;
+    c = mem[1];
+    mem[1] = mem[2];
+    mem[2] = c;
+}
+
+#if 0
+/* Swap halves of an 8-byte integer, then byte swap each half */
 static void
 wordswap8(unsigned char* mem)
 {
@@ -282,10 +285,12 @@ wordswap8(unsigned char* mem)
     memcpy(i,mem,4); /* save the first 4 bytes */
     memcpy(mem,mem+4,4); /* copy second 4 bytes into first four */
     memcpy(mem+4,i,4); /* copy saved 4 bytes into second four */
+    byteswap4(mem);
+    byteswap4(mem+4);
 }
+#endif /*0*/
+
 #endif
-
-
 
 /* Look at q0 and q1) to determine type */
 static int
@@ -331,7 +336,7 @@ parsefilterspec(const char* spec, unsigned int* idp, size_t* nparamsp, unsigned 
     size_t len;
     int i;
     unsigned int* ulist = NULL;
-    unsigned char mem[8]; /* to convert to network byte order */
+    unsigned char mem[8];
 
     if(spec == NULL || strlen(spec) == 0) goto fail;
     sdata = strdup(spec);
@@ -419,14 +424,13 @@ parsefilterspec(const char* spec, unsigned int* idp, size_t* nparamsp, unsigned 
 	    ulist[nparams++] = *(unsigned int*)&valf;
 	    break;
 
+	/* The following are 8-byte values, so we must swap pieces if this
+           is a little endian machine */	
 	case 'd':
 	    sstat = sscanf(p,"%lf",&vald);
 	    if(sstat != 1) goto fail;
-	    /* convert to network byte order */
 	    memcpy(mem,&vald,sizeof(mem));
-#ifdef WORDS_BIGENDIAN
-	    byteswap8(mem);  /* convert big endian to little endian */
-#endif
+	    NC_filterfix8(mem,0);
 	    vector = (unsigned int*)mem;
 	    ulist[nparams++] = vector[0];
 	    ulist[nparams++] = vector[1];
@@ -437,12 +441,9 @@ parsefilterspec(const char* spec, unsigned int* idp, size_t* nparamsp, unsigned 
 	    else
                 sstat = sscanf(p,"%lld",(long long*)&val64u);
 	    if(sstat != 1) goto fail;
-	    /* convert to network byte order */
 	    memcpy(mem,&val64u,sizeof(mem));
-#ifdef WORDS_BIGENDIAN	    
-	    byteswap8(mem);  /* convert big endian to little endian */
-#endif
-	    vector = (unsigned int*)mem;
+	    NC_filterfix8(mem,0);
+	    vector = (unsigned int*)&mem;
 	    ulist[nparams++] = vector[0];
 	    ulist[nparams++] = vector[1];
 	    break;
@@ -465,4 +466,22 @@ done:
 fail:
     stat = NC_EFILTER;
     goto done;
+}
+
+static void
+NC_filterfix8(unsigned char* mem, int decode)
+{
+#ifdef WORDS_BIGENDIAN
+    if(decode) { /* Apply inverse of the encode case */
+	byteswap4(mem); /* step 1: byte-swap each piece */
+	byteswap4(mem+4);
+	byteswap8(mem); /* step 2: convert to little endian format */
+    } else { /* encode */
+	byteswap8(mem); /* step 1: convert to little endian format */
+	byteswap4(mem); /* step 2: byte-swap each piece */
+	byteswap4(mem+4);
+    }
+#else /* Little endian */
+    /* No action is necessary */
+#endif	    
 }
