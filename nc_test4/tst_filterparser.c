@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 #include "netcdf.h"
-#include "ncfilter.h"
+#include "netcdf_filter.h"
 
 #define PARAMS_ID 32768
 
@@ -120,10 +120,6 @@ static const char* spectype[] = {"i", "b", "ub", "s", "us", "i", "ui", "i", "i",
 
 static int nerrs = 0;
 
-/*Forward*/
-static void NC_filterfix8(unsigned char* mem, int decode);
-static int parsefilterspec(const char* spec, unsigned int* idp, size_t* nparamsp, unsigned int** paramsp);
-
 static void
 mismatch(size_t i, unsigned int *params, const char* tag)
 {
@@ -197,7 +193,7 @@ main(int argc, char **argv)
 
     buildbaseline(); /* Build our comparison vector */
 
-    stat = parsefilterspec(spec,&id,&nparams,&params);
+    stat = NC_parsefilterspec(spec,&id,&nparams,&params);
     if(stat) {
 	fprintf(stderr,"NC_parsefilterspec failed\n");
 	exit(1);
@@ -243,55 +239,7 @@ main(int argc, char **argv)
     return (nerrs > 0 ? 1 : 0);
 }
 
-#ifdef WORDS_BIGENDIAN
-/* Byte swap an 8-byte integer in place */
-static void
-byteswap8(unsigned char* mem)
-{
-    unsigned char c;
-    c = mem[0];
-    mem[0] = mem[7];
-    mem[7] = c;
-    c = mem[1];
-    mem[1] = mem[6];
-    mem[6] = c;
-    c = mem[2];
-    mem[2] = mem[5];
-    mem[5] = c;
-    c = mem[3];
-    mem[3] = mem[4];
-    mem[4] = c;
-}
-
-/* Byte swap an 8-byte integer in place */
-static void
-byteswap4(unsigned char* mem)
-{
-    unsigned char c;
-    c = mem[0];
-    mem[0] = mem[3];
-    mem[3] = c;
-    c = mem[1];
-    mem[1] = mem[2];
-    mem[2] = c;
-}
-
 #if 0
-/* Swap halves of an 8-byte integer, then byte swap each half */
-static void
-wordswap8(unsigned char* mem)
-{
-    unsigned char i[4];
-    memcpy(i,mem,4); /* save the first 4 bytes */
-    memcpy(mem,mem+4,4); /* copy second 4 bytes into first four */
-    memcpy(mem+4,i,4); /* copy saved 4 bytes into second four */
-    byteswap4(mem);
-    byteswap4(mem+4);
-}
-#endif /*0*/
-
-#endif
-
 /* Look at q0 and q1) to determine type */
 static int
 gettype(const int q0, const int q1, int* isunsignedp)
@@ -468,6 +416,41 @@ fail:
     goto done;
 }
 
+#ifdef WORDS_BIGENDIAN
+/* Byte swap an 8-byte integer in place */
+static void
+byteswap8(unsigned char* mem)
+{
+    unsigned char c;
+    c = mem[0];
+    mem[0] = mem[7];
+    mem[7] = c;
+    c = mem[1];
+    mem[1] = mem[6];
+    mem[6] = c;
+    c = mem[2];
+    mem[2] = mem[5];
+    mem[5] = c;
+    c = mem[3];
+    mem[3] = mem[4];
+    mem[4] = c;
+}
+
+/* Byte swap an 8-byte integer in place */
+static void
+byteswap4(unsigned char* mem)
+{
+    unsigned char c;
+    c = mem[0];
+    mem[0] = mem[3];
+    mem[3] = c;
+    c = mem[1];
+    mem[1] = mem[2];
+    mem[2] = c;
+}
+
+#endif
+
 static void
 NC_filterfix8(unsigned char* mem, int decode)
 {
@@ -485,3 +468,5 @@ NC_filterfix8(unsigned char* mem, int decode)
     /* No action is necessary */
 #endif	    
 }
+
+#endif /*0*/

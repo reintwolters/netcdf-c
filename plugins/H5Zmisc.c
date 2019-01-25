@@ -6,6 +6,10 @@
 #include <hdf5.h>
 /* Older versions of the hdf library may define H5PL_type_t here */
 #include <H5PLextern.h>
+#include "h5misc.h"
+
+#include "netcdf.h"
+#include "netcdf_filter.h"
 
 #ifndef DLL_EXPORT
 #define DLL_EXPORT
@@ -26,8 +30,6 @@ Additionally, if your filter code leaks memory, then the HDF5 library
 will generate an error.
 
 */
-
-#include "h5misc.h"
 
 #undef DEBUG
 
@@ -138,12 +140,9 @@ static int
 paramcheck(size_t nparams, const unsigned int* params)
 {
     size_t i;
-    /* Test endianness of this machine */
-    const unsigned char b[4] = {0x0,0x0,0x0,0x1}; /* value 1 in big-endian*/
-    int bigendian = (1 == *(unsigned int*)b); /* 1=>big 0=>little*/
 
     if(nparams != 14) {
-	fprintf(stderr,"Too few parameters: need=16 sent=%ld\n",(unsigned long)nparams);
+	fprintf(stderr,"Too few parameters: need=14 sent=%ld\n",(unsigned long)nparams);
 	goto fail;
     }
 
@@ -190,11 +189,10 @@ paramcheck(size_t nparams, const unsigned int* params)
 	    {mismatch(i,"float"); goto fail; };
 	    break;
         case 8: {/*double*/
+	    NC_filterfix8(&params[i],1); /* Fix up endianness */
             double x = *(double*)&params[i];
 	    dval = DBLVAL;
             i++; /* takes two parameters */
-            if(bigendian)
-		byteswap8((unsigned char*)&x);
 	    if(dval != x) {
                 mismatch(i,"double");
                 goto fail;
@@ -202,10 +200,9 @@ paramcheck(size_t nparams, const unsigned int* params)
             }; break;
         case 10: {/*signed long long*/
             signed long long x = *(signed long long*)&params[i];
+	    NC_filterfix8(&x,1); /* Fix up endianness */
 	    lval = -9223372036854775807L;
             i++; /* takes two parameters */
-            if(bigendian)
-		byteswap8((unsigned char*)&x);
             if(lval != x) {
                 mismatch(i,"signed long long");
                 goto fail;
@@ -213,10 +210,9 @@ paramcheck(size_t nparams, const unsigned int* params)
             }; break;
         case 12: {/*unsigned long long*/
             unsigned long long x = *(unsigned long long*)&params[i];
+	    NC_filterfix8(&x,1); /* Fix up endianness */
 	    lval = 18446744073709551615UL;
             i++; /* takes two parameters */
-            if(bigendian)
-		byteswap8((unsigned char*)&x);
             if(lval != x) {
                 mismatch(i,"unsigned long long");
                 goto fail;
@@ -243,24 +239,6 @@ paramcheck(size_t nparams, const unsigned int* params)
     return 1;
 fail:
     return 0;
-}
-
-static void
-byteswap8(unsigned char* mem)
-{
-    unsigned char c;
-    c = mem[0];
-    mem[0] = mem[7];
-    mem[7] = c;
-    c = mem[1];
-    mem[1] = mem[6];
-    mem[6] = c;
-    c = mem[2];
-    mem[2] = mem[5];
-    mem[5] = c;
-    c = mem[3];
-    mem[3] = mem[4];
-    mem[4] = c;
 }
 
 static void
