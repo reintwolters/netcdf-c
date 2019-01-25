@@ -161,7 +161,7 @@ verifyparams(void)
 static int
 openfile(void)
 {
-    unsigned int* params;
+    unsigned int* params = NULL;
 
     /* Open the file and check it. */
     CHECK(nc_open(TESTFILE, NC_NOWRITE, &ncid));
@@ -191,6 +191,8 @@ openfile(void)
 	}
     }
     if(nerrs > 0) return NC_EFILTER; 
+
+    if(params) free(params);
 
     /* Verify chunking */
     if(!verifychunks())

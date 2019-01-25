@@ -9,7 +9,6 @@
 #include "h5misc.h"
 
 #include "netcdf.h"
-#include "netcdf_filter.h"
 
 #ifndef DLL_EXPORT
 #define DLL_EXPORT
@@ -39,8 +38,9 @@ will generate an error.
 #define DBLVAL 12345678.12345678
 
 static int paramcheck(size_t nparams, const unsigned int* params);
-static void byteswap8(unsigned char* mem);
 static void mismatch(size_t i, const char* which);
+
+extern void NC_filterfix8(void* mem, int decode);
 
 const H5Z_class2_t H5Z_TEST[1] = {{
     H5Z_CLASS_T_VERS,                /* H5Z_class_t version */
@@ -140,6 +140,7 @@ static int
 paramcheck(size_t nparams, const unsigned int* params)
 {
     size_t i;
+    unsigned char mem[8];
 
     if(nparams != 14) {
 	fprintf(stderr,"Too few parameters: need=14 sent=%ld\n",(unsigned long)nparams);
@@ -189,8 +190,10 @@ paramcheck(size_t nparams, const unsigned int* params)
 	    {mismatch(i,"float"); goto fail; };
 	    break;
         case 8: {/*double*/
-	    NC_filterfix8(&params[i],1); /* Fix up endianness */
-            double x = *(double*)&params[i];
+            double x;
+	    memcpy(mem,&params[i],sizeof(mem));
+	    NC_filterfix8(mem,1); /* Fix up endianness */
+            x = *(double*)mem;
 	    dval = DBLVAL;
             i++; /* takes two parameters */
 	    if(dval != x) {
@@ -199,7 +202,10 @@ paramcheck(size_t nparams, const unsigned int* params)
             }
             }; break;
         case 10: {/*signed long long*/
-            signed long long x = *(signed long long*)&params[i];
+            signed long long x;
+	    memcpy(mem,&params[i],sizeof(mem));
+	    NC_filterfix8(mem,1); /* Fix up endianness */
+            x = *(signed long long*)mem;
 	    NC_filterfix8(&x,1); /* Fix up endianness */
 	    lval = -9223372036854775807L;
             i++; /* takes two parameters */
@@ -209,8 +215,10 @@ paramcheck(size_t nparams, const unsigned int* params)
             }
             }; break;
         case 12: {/*unsigned long long*/
-            unsigned long long x = *(unsigned long long*)&params[i];
-	    NC_filterfix8(&x,1); /* Fix up endianness */
+            unsigned long long x;
+	    memcpy(mem,&params[i],sizeof(mem));
+	    NC_filterfix8(mem,1); /* Fix up endianness */
+            x = *(unsigned long long*)mem;
 	    lval = 18446744073709551615UL;
             i++; /* takes two parameters */
             if(lval != x) {

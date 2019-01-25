@@ -236,6 +236,7 @@ main(int argc, char **argv)
     if (!nerrs)
        printf("SUCCESS!!\n");
 
+    if(params) free(params);
     return (nerrs > 0 ? 1 : 0);
 }
 
