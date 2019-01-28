@@ -106,7 +106,6 @@ NCD4_processdata(NCD4meta* meta)
 	    FAIL(ret,"byte swapping failed");
     }
 
-
 done:
     if(toplevel) nclistfree(toplevel);
     return THROW(ret);
