@@ -8,8 +8,6 @@
 #include <H5PLextern.h>
 #include "h5misc.h"
 
-#include "netcdf.h"
-
 #ifndef DLL_EXPORT
 #define DLL_EXPORT
 #endif
