@@ -26,7 +26,7 @@
    to catch the failure. Turing it on incurs a significant
    performance penalty, so it is off by default.*/
 
-#undef OCCATCHERROR
+#define OCCATCHERROR
 
 #define OCPANIC(msg) assert(ocpanic(msg))
 #define OCPANIC1(msg,arg) assert(ocpanic(msg,arg))
