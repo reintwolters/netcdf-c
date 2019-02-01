@@ -160,7 +160,7 @@ occompile1(OCstate* state, OCnode* xnode, XXDR* xxdrs, OCdata** datap)
                 break; /* we are done with the this sequence instance*/
             } else {
 		nclog(NCLOGERR,"missing/invalid begin/end record marker\n");
-                ocstat = OCHROW(OC_EINVALCOORDS);
+                ocstat = OCTHROW(OC_EINVALCOORDS);
 		goto fail;
             }
 	}
