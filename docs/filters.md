@@ -142,6 +142,13 @@ The "-F" option can be used repeatedly as long as the variable name
 part is different. A different filter id and parameters can be
 specified for each occurrence.
 
+It can be convenient to specify that the same compression is to be
+applied to more than one variable. To support this, two additional
+*-F* cases are defined.
+
+1. ````-F *,...``` means apply the filter to all variables in the dataset.
+2. ````-F v1|v2|..,...``` means apply the filter to a multiple variables.
+
 As a rule, any input filter on an input variable will be applied
 to the equivalent output variable -- assuming the output file type
 is netcdf-4. It is, however, sometimes convenient to suppress
@@ -149,16 +156,19 @@ output compression either totally or on a per-variable basis.
 Total suppression of output filters can be accomplished by specifying
 a special case of "-F", namely this.
 ````
-nccopy -F "none" input.nc output.nc
+nccopy -F none input.nc output.nc
 ````
-Suppression of output filtering for a specific variable can be accomplished
-using this format.
+The expression ````-F *,none```` is equivalent to ````-F none````.
+
+Suppression of output filtering for a specific set of variables
+can be accomplished using these formats.
 ````
 nccopy -F "var,none" input.nc output.nc
+nccopy -F "v1|v2|...,none" input.nc output.nc
 ````
-where "var" is the fully qualified name of the variable.
+where "var" and the "vi" are the fully qualified name of a variable.
 
-The rules for all possible cases of the "-F" flag are defined
+The rules for all possible cases of the "-F none" flag are defined
 by this table.
 
 <table>

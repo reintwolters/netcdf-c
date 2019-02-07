@@ -273,15 +273,17 @@ Set the log level; only usable if nccopy supports netCDF-4 (enhanced).
 Set the minimum chunk size; only usable if nccopy supports netCDF-4 (enhanced).
 .IP "\fB \-F \fP \fIfilterspec\fP"
 For netCDF-4 output, including netCDF-4 classic model, specify a filter
-to apply to an specified variable in the output. As a rule, the filter
+to apply to a specified set of variables in the output. As a rule, the filter
 is a compression/decompression algorithm with a unique numeric identifier
 assigned by the HDF Group (see https://support.hdfgroup.org/services/filters.html).
 .IP
 The \fIfilterspec\fP argument has this general form.
 .RS
-fqn,filterid,param1,param2...paramn
+fqn1|fqn2...,filterid,param1,param2...paramn
+or
+*,filterid,param1,param2...paramn
 .RE
-The fqn (fully qualified name) is the name
+An fqn (fully qualified name) is the name
 of a variable prefixed by its containing
 groups with the group names separated by forward slash ('/').
 An example might be \FI/g1/g2/var\fP. Alternatively,
