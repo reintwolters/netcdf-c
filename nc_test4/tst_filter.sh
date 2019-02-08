@@ -194,6 +194,8 @@ rm -f ./bzip*.nc ./unfiltered.nc ./filtered.nc ./tst_filter.txt ./tst_filter2.tx
 rm -f ./test_bzip2.c
 rm -f ./testmisc.nc
 rm -f ./tst_filter2.nc
+rm -f ./unfilteredvv.nc ./filteredvv.nc ./filteredvbar.nc
+rm -f ./tst_filteredvv.txt ./tst_filteredvbar.txt
 echo "*** Pass: all selected tests passed"
 
 exit 0
