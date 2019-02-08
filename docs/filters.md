@@ -183,6 +183,7 @@ by this table.
 <tr><td>false<td>unspecified<td>defined<td>use input filter
 <tr><td>false<td>-Fvar,none<td>NA<td>unfiltered
 <tr><td>false<td>-Fvar,...<td>NA<td>use output filter
+<tr><td>false<td>unspecified<td>none<td>unfiltered
 </table> 
 
 Parameter Encoding {#ParamEncode}

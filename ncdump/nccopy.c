@@ -295,10 +295,10 @@ parsefilterspec(const char* optarg0, List* speclist)
     /* Delimit the initial set of variables, taking escapes into account */
     p = optarg;
     remainder = NULL;
-    for(;*p;p++) {
-	if(*p == '\\') p++;
+    for(;;p++) {
+	if(*p == '\0') {remainder = p; break;}
 	else if(*p == ',') {*p = '\0'; remainder = p+1; break;}
-	else if(*p == '\0') {remainder = p; break;}
+	else if(*p == '\\') p++;
 	/* else continue */
     }
 
@@ -719,6 +719,7 @@ copy_var_filter(int igrp, int varid, int ogrp, int o_varid, int inkind, int outk
     /* handle filter parameters, copying from input, overriding with command-line options */
     struct FilterSpec* ospec = NULL;
     struct FilterSpec inspec;
+    struct FilterSpec nospec;
     struct FilterSpec* actualspec = NULL;
     int i;
     char* ofqn = NULL;
@@ -734,6 +735,8 @@ copy_var_filter(int igrp, int varid, int ogrp, int o_varid, int inkind, int outk
 
     /* Clear the in and out specs */
     memset(&inspec,0,sizeof(inspec));
+    memset(&nospec,0,sizeof(nospec));
+	nospec.nofilter = 1;
     actualspec = NULL;
     ospec = NULL;
 
@@ -772,12 +775,13 @@ copy_var_filter(int igrp, int varid, int ogrp, int o_varid, int inkind, int outk
 	global		output		input	Actual Output
 	suppress	filter		filter	filter
 	-----------------------------------------------
-	true		undefined	NA	unfiltered
-	true		'none'		NA	unfiltered
-	true		defined		NA	use output filter
-	false		undefined	defined	use input filter
-	false		'none'		NA	unfiltered
-	false		defined		NA	use output filter
+	true		undefined	NA	  unfiltered
+	true		'none'		NA	  unfiltered
+	true		defined		NA	  use output filter
+	false		undefined	defined	  use input filter
+	false		'none'		NA	  unfiltered
+	false		defined		NA	  use output filter
+	false		undefined	undefined unfiltered
     */
 
     unfiltered = 0;
@@ -794,6 +798,8 @@ copy_var_filter(int igrp, int varid, int ogrp, int o_varid, int inkind, int outk
       unfiltered = 1;
     else if(!suppressfilters && outputdefined) /* row 6 */
       actualspec = ospec;
+    else if(!suppressfilters && !outputdefined && !inputdefined) /* row 7 */
+      actualspec = &nospec;
 
     /* Apply actual filter spec if any */
     if(!unfiltered) {
@@ -956,6 +962,7 @@ copy_var_specials(int igrp, int varid, int ogrp, int o_varid, int inkind, int ou
     int stat = NC_NOERR;
     int innc4 = (inkind == NC_FORMAT_NETCDF4 || inkind == NC_FORMAT_NETCDF4_CLASSIC);
     int outnc4 = (outkind == NC_FORMAT_NETCDF4 || outkind == NC_FORMAT_NETCDF4_CLASSIC);
+    int deflated = 0; /* true iff deflation is applied */
 
     if(!outnc4)
 	return stat; /* Ignore non-netcdf4 files */
@@ -995,6 +1002,7 @@ copy_var_specials(int igrp, int varid, int ogrp, int o_varid, int inkind, int ou
                then default chunking will be turned on; so do a special check for that. */
 	    if(shuffle_out != 0 || deflate_out != 0)
 	        NC_CHECK(nc_def_var_deflate(ogrp, o_varid, shuffle_out, deflate_out, deflate_level_out));
+	    deflated = deflate_out;
 	}
     }
 
@@ -1016,8 +1024,10 @@ copy_var_specials(int igrp, int varid, int ogrp, int o_varid, int inkind, int ou
 	}
     }
 
-    /* handle other general filters */
-    NC_CHECK(copy_var_filter(igrp, varid, ogrp, o_varid, inkind, outkind));
+    if(!deflated) {
+        /* handle other general filters */
+        NC_CHECK(copy_var_filter(igrp, varid, ogrp, o_varid, inkind, outkind));
+    }
 
     return stat;
 }
@@ -2190,13 +2200,12 @@ main(int argc, char**argv)
 	    /* If the arg is "none" or "*,none" then suppress all filters
                on output unless explicit */
 	    if(strcmp(optarg,"none")==0
-	       && strcmp(optarg,"*,none")==0) {
+	       || strcasecmp(optarg,"*,none")==0) {
 		suppressfilters = 1;
 	    } else {
 		if(filterspecs == NULL)
 		    filterspecs = listnew();
-		if(parsefilterspec(optarg,filterspecs) != NC_NOERR)
-		    usage();
+		NC_CHECK(parsefilterspec(optarg,filterspecs));
 		/* Force output to be netcdf-4 */
 		option_kind = NC_FORMAT_NETCDF4;
 	    }
