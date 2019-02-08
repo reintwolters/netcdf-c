@@ -247,8 +247,8 @@ static int
 parsevarlist(char* vars, List* vlist)
 {
     int stat = NC_NOERR;
-    char* p = NULL;
     char* q = NULL;
+    int nvars = 0;
 
     /* Special case 1: empty set of vars */
     if(vars == NULL || strlen(vars)==0) {stat = NC_EINVAL; goto done;}
@@ -259,15 +259,17 @@ parsevarlist(char* vars, List* vlist)
 	goto done;
     }
 
-    /* Walk looking for '|' separators */
-    q = p = vars;
-    for(;*q;q++) {
+    /* Walk delimitng on '|' separators */
+    for(q=vars;*q;q++) {
 	if(*q == '\\') q++;
-	else if(*q == '|' || *q == '\0') {
-	    listpush(vlist,strdup(p));	    
-	    p = q;
-	}
+	else if(*q == '|') {*q = '\0'; nvars++;}
 	/* else continue */
+    }
+    nvars++; /*for last var*/
+    /* Rewalk to capture the variables */
+    for(q=vars;nvars > 0; nvars--) {
+	listpush(vlist,strdup(q));
+	q += (strlen(q)+1); /* move to next */
     }
 
 done:
@@ -286,6 +288,7 @@ parsefilterspec(const char* optarg0, List* speclist)
     char* remainder = NULL;
     List* vlist = NULL;
     int i;
+    int isnone = 0;
 
     if(optarg0 == NULL || strlen(optarg0) == 0 || speclist == NULL) return 0;
     optarg = strdup(optarg0);
@@ -303,23 +306,36 @@ parsefilterspec(const char* optarg0, List* speclist)
     if((vlist = listnew()) == NULL) {stat = NC_ENOMEM; goto done;}
     if((stat=parsevarlist(optarg,vlist))) goto done;        
 
-    /* Collect the id+parameters */
-    if((stat=NC_parsefilterspec(remainder,&id,&nparams,&params))) goto done;
+    if(strcasecmp(remainder,"none") != 0) {
+        /* Collect the id+parameters */
+        if((stat=NC_parsefilterspec(remainder,&id,&nparams,&params))) goto done;
+    } else
+        isnone = 1;
     
     /* Construct a spec entry for each element in vlist */
     for(i=0;i<listlength(vlist);i++) {
+	size_t vlen;
         struct FilterSpec* spec = NULL;
 	const char* var = listget(vlist,i);
 	if(var == NULL || strlen(var) == 0) continue;
 	if((spec = calloc(1,sizeof(struct FilterSpec)))==NULL)
 	    {stat = NC_ENOMEM; goto done;}
-	spec->fqn = strdup(var);
-	spec->filterid = id;
-	spec->nparams = nparams;
-	/* Duplicate the params */
-	spec->params = malloc(nparams*sizeof(unsigned int));
-	if(spec->params == NULL) {stat = NC_ENOMEM; goto done;}
-	memcpy(spec->params,params,nparams*sizeof(unsigned int));
+	vlen = strlen(var);
+	spec->fqn = malloc(vlen+1+1); /* make room for nul and possible prefix '/' */
+	if(spec->fqn == NULL) {stat = NC_ENOMEM; goto done;}
+        spec->fqn[0] = '\0'; /* for strlcat */
+	if(strcmp(var,"*") != 0 && var[0] != '/') strlcat(spec->fqn,"/",vlen+2);
+	strlcat(spec->fqn,var,vlen+2);
+	if(isnone)
+	    spec->nofilter = 1;
+	else {
+ 	    spec->filterid = id;
+	    spec->nparams = nparams;
+	    /* Duplicate the params */
+	    spec->params = malloc(nparams*sizeof(unsigned int));
+	    if(spec->params == NULL) {stat = NC_ENOMEM; goto done;}
+	    memcpy(spec->params,params,nparams*sizeof(unsigned int));
+	}
 	listpush(speclist,spec);
 	spec = NULL;
     }
@@ -2171,9 +2187,10 @@ main(int argc, char**argv)
             break;
 	case 'F': /* optional filter spec for a specified variable */
 #ifdef USE_NETCDF4
-	    /* If the arg is "none" then suppress all filters
+	    /* If the arg is "none" or "*,none" then suppress all filters
                on output unless explicit */
-	    if(strcmp(optarg,"none")==0) {
+	    if(strcmp(optarg,"none")==0
+	       && strcmp(optarg,"*,none")==0) {
 		suppressfilters = 1;
 	    } else {
 		if(filterspecs == NULL)

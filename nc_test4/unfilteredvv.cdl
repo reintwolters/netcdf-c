@@ -4,6 +4,7 @@ dimensions:
 	dim1 = 4 ;
 variables:
 	float var1(dim0, dim1) ;
+ 	    var1:_ChunkSizes = 2, 2 ;
 data:
 
  var1 =
@@ -15,6 +16,8 @@ data:
 group: g {
   variables:
   	float var2(dim0, dim1) ;
+ 	    var2:_ChunkSizes = 2, 2 ;
+	
   data:
 
    var2 =

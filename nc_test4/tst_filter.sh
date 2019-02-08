@@ -125,7 +125,7 @@ echo "	*** Pass: nccopy '*' filter"
 
 echo "	*** Testing 'v|v' filter application"
 ${NCCOPY} -M0 -F "var1|/g/var2,307,9,4" unfilteredvv.nc filteredvbar.nc
-${NCDUMP} -s filteredvbar.nc > ./tst_filtervbar.txt
+${NCDUMP} -n filteredvv -s filteredvbar.nc > ./tst_filtervbar.txt
 # Remove irrelevant -s output
 sclean ./tst_filtervbar.txt ./filteredvbar.dump
 diff -b -w ${srcdir}/filteredvv.cdl ./filteredvbar.dump

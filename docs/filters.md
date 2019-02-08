@@ -149,6 +149,10 @@ applied to more than one variable. To support this, two additional
 1. ````-F *,...``` means apply the filter to all variables in the dataset.
 2. ````-F v1|v2|..,...``` means apply the filter to a multiple variables.
 
+Note that the characters '*' and '|' are bash reserved characters,
+so you will probably need to escape or quote the filter spec in
+that environment.
+
 As a rule, any input filter on an input variable will be applied
 to the equivalent output variable -- assuming the output file type
 is netcdf-4. It is, however, sometimes convenient to suppress

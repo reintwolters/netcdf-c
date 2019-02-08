@@ -289,6 +289,9 @@ groups with the group names separated by forward slash ('/').
 An example might be \FI/g1/g2/var\fP. Alternatively,
 just the variable name can be given if it is in the root group:
 e.g. \FIvar\fP. Backslash escapes may be used as needed.
+A note of warning: the '|' separator is a bash reserved character, so you will
+probably need to put the filter spec in some kind of quotes or otherwise escape it.
+.IP
 The filterid is an unsigned positive integer representing the id
 assigned by the HDFgroup to the filter. Following the id is a sequence of
 parameters defining the operation of the filter. Each parameter
