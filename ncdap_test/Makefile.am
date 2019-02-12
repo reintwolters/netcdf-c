@@ -38,7 +38,7 @@ endif
 # because the server may be down or inaccessible
 
 if ENABLE_DAP_REMOTE_TESTS
-noinst_PROGRAMS += findtestserver
+noinst_PROGRAMS = findtestserver
 findtestserver_SOURCES = findtestserver.c
 endif
 
