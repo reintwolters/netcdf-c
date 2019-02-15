@@ -12,7 +12,7 @@ echo "test_remote.sh:"
 #BIG=1
 #NOCSUM=1
 
-F1="\
+F="\
 test_atomic_array.nc \
 test_atomic_types.nc \
 test_enum.nc \
@@ -55,7 +55,6 @@ test_sequence_1.syn \
 test_sequence_2.syn \
 test_struct_array.syn \
 "
-F="test_misc1.nc"
 
 setresultdir results_test_remote
 
