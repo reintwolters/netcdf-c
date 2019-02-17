@@ -582,18 +582,18 @@ extern int H5Eprint1(FILE * stream);
 #endif
 
 void
-check_err(const int stat, const int line, const char* file)
+check_err(const int stat, const int line)
 {
-    check_err2(stat,-1,line,file);
+    check_err2(stat,-1,line);
 }
 
-void check_err2(const int stat, const int cdlline, const int line, const char* file) {
+void check_err2(const int stat, const int cdlline, const int line) {
     if (stat != NC_NOERR) {
 	if(cdlline >= 0)
 	    fprintf(stderr, "ncgen: cdl line %d; %s\n", cdlline, nc_strerror(stat));
 	else
 	    fprintf(stderr, "ncgen: %s\n", nc_strerror(stat));
-	fprintf(stderr, "\t(%s:%d)\n", file,line);
+	fprintf(stderr, "\t(ncgen:%d)\n", line);
 #ifdef USE_HDF5
 	H5Eprint1(stderr);
 #endif

@@ -73,4 +73,5 @@ extern char* chkstrdup(const char* s);
 
 #define MEMCHECK(var,throw) {if((var)==NULL) return (throw);}
 
+
 #endif /*NCGEN_DEBUG_H*/

@@ -58,10 +58,15 @@ extern int countunlimited(Dimset* dimset);
 extern unsigned char* makebytestring(char* s, size_t* lenp);
 extern int getpadding(int offset, int alignment);
 
-extern void check_err(const int stat, const int line, const char* file);
-extern void check_err2(const int stat, const int cdlline, const int line, const char* file);
 extern const char* kind_string(int kind);
 extern int getrootid(int grpid);
+
+extern void check_err(const int stat, const int line);
+extern void check_err2(const int stat, const int cdlline, const int line);
+
+/* Wrap check_err and check_err2 */
+#define CHECK_ERR(stat) check_err(stat,__LINE__)
+#define CHECK_ERR2(stat,cdlline) check_err2(stat,cdlline,__LINE__)
 
 /* Inline functions */
 #define isunlimited(dimset,i) ((dimset)->dimsyms[i]->dim.isunlimited)

@@ -14,7 +14,7 @@ It has diverged slightly over time.
 #include "nc_iter.h"
 
 
-#define CHECK(stat,f) if(stat != NC_NOERR) {check(stat,#f,__FILE__,__LINE__);} else {}
+#define CHECK(stat,f) if(stat != NC_NOERR) {check(stat,#f,__LINE__);} else {}
 
 /* forward declarations */
 static int nc_blkio_init(size_t bufsize, size_t value_size, int rank, 
@@ -28,11 +28,11 @@ static int nciter_vartype(Symbol*,Symbol**);
 static int nciter_valuesize(Symbol*,size_t*);
 
 static void
-check(int err, const char* fcn, const char* file, const int line)
+check(int err, const char* fcn, const int line)
 {
     fprintf(stderr,"%s\n",nc_strerror(err));
-    fprintf(stderr,"Location: function %s; file %s; line %d\n",
-	    fcn,file,line);
+    fprintf(stderr,"Location: function %s; file ncgen; line %d\n",
+	    fcn,line);
     fflush(stderr); fflush(stdout);
     exit(1);
 }
